@@ -514,17 +514,21 @@ void TaskManager::runScheduledJobs()
     bool nothingToDo = true;
     foreach(JobPtr job, _jobMap)
     {
+        // Do we need to run any jobs?
         if((doDaily && (job->optionScheduledEnabled() == JobSchedule::Daily))
            || (doWeekly && (job->optionScheduledEnabled() == JobSchedule::Weekly))
            || (doMonthly
                && (job->optionScheduledEnabled() == JobSchedule::Monthly)))
         {
-            // Before the first job, check & wait for an internet connection.
-            if(nothingToDo)
+            // Before the first job...
+            if(nothingToDo) {
+                // ... we have a job now
+                nothingToDo = false;
+                // ... check & wait for an internet connection
                 if(!waitForOnline())
                     return;
+            }
             backupNow(job->createBackupTask());
-            nothingToDo = false;
         }
     }
     if(nothingToDo)
