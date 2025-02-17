@@ -30,15 +30,24 @@ ArchiveListWidget::~ArchiveListWidget()
 
 void ArchiveListWidget::setArchives(QList<ArchivePtr> archives)
 {
-    std::sort(archives.begin(), archives.end(),
-              [](const ArchivePtr &a, const ArchivePtr &b) {
-                  return (a->timestamp() > b->timestamp());
-              });
-    setUpdatesEnabled(false);
     clear();
-    foreach(ArchivePtr archive, archives)
-        insertArchive(archive, count());
-    setUpdatesEnabled(true);
+    setUpdatesEnabled(false);
+    // partition archives into kChunkSize item chunks and insert them in batches
+    // at approx 1ms per item intervals to avoid GUI lockup
+    const int kChunkSize = 50;
+    for (int i = 0; i < archives.size(); i += kChunkSize)
+    {
+        QList<ArchivePtr> chunk = archives.mid(i, kChunkSize);
+        bool lastChunk = (i + kChunkSize) >= archives.size();
+        QTimer::singleShot(kChunkSize * (i / kChunkSize), this, [this, chunk, lastChunk] {
+            for (ArchivePtr archive : chunk) insertArchive(archive, count(), false);
+            if(lastChunk)
+            {
+                setUpdatesEnabled(true);
+                emit countChanged(count(), visibleItemsCount());
+            }
+        });
+    }
 }
 
 void ArchiveListWidget::addArchive(ArchivePtr archive)
@@ -211,13 +220,15 @@ void ArchiveListWidget::removeItem()
     }
 }
 
-void ArchiveListWidget::insertArchive(ArchivePtr archive, int pos)
+void ArchiveListWidget::insertArchive(ArchivePtr archive, int pos, bool update)
 {
     if(!archive)
     {
         DEBUG << "Null ArchivePtr passed.";
         return;
     }
+
+    // DEBUG << "Insert Archive";
 
     ArchiveListWidgetItem *item = new ArchiveListWidgetItem(archive);
     connect(item, &ArchiveListWidgetItem::requestDelete, this,
@@ -233,7 +244,8 @@ void ArchiveListWidget::insertArchive(ArchivePtr archive, int pos)
     insertItem(pos, item);
     setItemWidget(item, item->widget());
     item->setHidden(!archive->name().contains(_filter));
-    emit countChanged(count(), visibleItemsCount());
+    if(update)
+        emit countChanged(count(), visibleItemsCount());
 }
 
 int ArchiveListWidget::visibleItemsCount()

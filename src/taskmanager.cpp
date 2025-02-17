@@ -166,7 +166,12 @@ void TaskManager::loadArchives()
             _archiveMap[archive->name()] = archive;
         } while(query.next());
     }
-    emit archiveList(_archiveMap.values());
+    QList<ArchivePtr> archives = _archiveMap.values();
+    std::sort(archives.begin(), archives.end(),
+              [](const ArchivePtr &a, const ArchivePtr &b) {
+                  return (a->timestamp() > b->timestamp());
+              });
+    emit archiveList(archives);
 }
 
 void TaskManager::getArchiveStats(ArchivePtr archive)

@@ -446,7 +446,7 @@ margin-bottom: -1px;
               <item>
                <widget class="QLabel" name="archivesCountLabel">
                 <property name="text">
-                 <string>Archives</string>
+                 <string>Archives (loading...)</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignCenter</set>
