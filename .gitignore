@@ -13,5 +13,7 @@ qrc_resources.cpp
 # compiled executable
 tarsnap-gui
 Tarsnap.app
+build-*-Debug/
+build-*-Release/
 # Doxygen output
 docs
